@@ -18,11 +18,19 @@ class TestGUIWindow(unittest.TestCase):
         python_exe = Path(".venv") / "Scripts" / "python.exe"
         script_path = Path("GUI") / "Application.py"
         cls.proc = subprocess.Popen([str(python_exe), str(script_path)])
+        
+        cls.app = Application(backend="uia")
+        for _ in range(30):
+            try:
+                cls.app.connect(title_re="S.P.A.C.E")
+                break
+            except Exception:
+                time.sleep(0.5)
+        else:
+            raise RuntimeError("Could not find window with title 'S.P.A.C.E' after 15 seconds")
 
-        time.sleep(2)
-
-        cls.app = Application(backend="uia").connect(title="S.P.A.C.E")
-        cls.window = cls.app.window(title="S.P.A.C.E")
+        cls.window = cls.app.window(title_re="S.P.A.C.E")
+        cls.window.wait("visible", timeout=10)        
 
     @classmethod
     def tearDownClass(cls):
@@ -35,42 +43,51 @@ class TestGUIWindow(unittest.TestCase):
         button = self.window.child_window(title="Midnight", control_type="Button")
         self.assertTrue(button.exists())
     
-    # Implement after clock is fixed (currently not fixed)
     def test_clock_exists(self):
-        # # (Name) text_Clock
-        # clock = self.window.child_window(title="edit_Clock", control_type="Edit")
-        
-        # # (Legacy|Accessible.Value or Value.Value) Time shown on clock
-        # print(clock.get_value())
-        pass
+        clock_container = self.window.child_window(title="clock_Time", control_type="Group")
+        clock_edit = clock_container.child_window(control_type="Edit")
+        self.assertTrue(clock_edit.exists())
     
-    # Need to update later as timer's name is the actual time.
     def test_click_midnight_button(self):
-        button = self.window.child_window(title="Midnight", control_type="Button")
-        self.assertTrue(button.exists(), "Midnight button should exist")
+        midnight_button = self.window.child_window(title="Midnight", control_type="Button")
+        midnight_button.click_input()
 
-        # Click the button
-        button.click_input()
+        stop_button = self.window.child_window(title="Stop", control_type="Button")
+        stop_button.click_input()
 
-        # After clicking, check that the clock label shows midnight
-        clock_label = self.window.child_window(title="00:00:00", control_type="Text")
-        self.assertTrue(clock_label.exists(), "Clock should reset to 00:00:00 after Midnight is clicked")
-    
+        clock_container = self.window.child_window(title="clock_Time", control_type="Group")
+        clock_edit = clock_container.child_window(control_type="Edit")
+        
+        self.assertTrue(clock_container.exists())
+        self.assertTrue(clock_edit.exists())
+
+        clock_text = clock_edit.iface_value.CurrentValue
+        print(f"Clock shows: {clock_text}")
+        self.assertEqual(clock_text, "00:00:00", "Clock should reset to 00:00:00 after Midnight is clicked")
+            
     def test_slider_time_exists(self):
         slider = self.window.child_window(title="slider_Time", control_type="Slider")
         self.assertTrue(slider.exists(), "Time slider should exist")
         
     # Tests for Emelee:
     def test_start_button_exists(self):
-        # (title: Start)
-        pass
-    
+        button = self.window.child_window(title="Start", control_type="Button")
+        self.assertTrue(button.exists(), "Start button should exist")
+
     def test_stop_button_exists(self):
-        # (title: Stop)
-        pass
-    
+        button = self.window.child_window(title="Stop", control_type="Button")
+        self.assertTrue(button.exists(), "Stop button should exist")
+
     def test_now_button_exists(self):
-        # (title: Now)
+        button = self.window.child_window(title="Now", control_type="Button")
+        self.assertTrue(button.exists(), "Now button should exist")
+        
+    def test_tle_expand_collapse_button_exists(self):
+        # (title: button_ExpandCollapse) <- Expand/Collapse button (left one)
+        pass
+        
+    def test_click_tle_expand_collapse_button(self):
+        # (title: label_DropHere) <- Ensure that clicking on expand/collapse makes this visible/not visible
         pass
 
         # def test_print_all_elements(self):
